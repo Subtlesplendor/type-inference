@@ -1,24 +1,13 @@
 module [
-    Lit,
-    Exp,
     w,
 ]
 
+import Exp exposing [Exp]
 import State exposing [State]
 import Type exposing [Type]
 import Subst exposing [Subst]
 import Scheme
 import TypeEnv exposing [TypeEnv]
-
-Lit : [LInt I32]
-
-Exp : [
-    ELit Lit,
-    EVar Str,
-    EAbs Str Exp,
-    EApp Exp Exp,
-    ELet Str Exp Exp,
-]
 
 w : TypeEnv, Exp, State -> Result (Subst, Type, State) _
 w = \gamma, e, s ->
@@ -57,3 +46,15 @@ w = \gamma, e, s ->
             (sub2, t2, state2) = w? (newEnv |> TypeEnv.add x scheme) e2 state1
 
             Ok (sub1 |> Subst.compose sub2, t2, state2)
+
+expect
+    #    init = State.initial
+    gamma = TypeEnv.empty {}
+    expr = ELet "id" (EAbs "x" (EVar "x")) (EApp (EApp (EVar "id") (EVar "id")) (EApp (EVar "id") (EVar "id")))
+
+    res = w gamma expr (State.initial)
+    when res is
+        Ok (_, type, _) ->
+            type == (TFun (TVar "a6") (TVar "a6"))
+
+        Err _ -> Bool.false

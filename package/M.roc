@@ -54,3 +54,17 @@ m = \gamma, e, type, s ->
             newType = type |> Subst.apply sub1
             (sub2, state3) = try m newEnv e2 newType state2
             Ok (sub1 |> Subst.compose sub2, state3)
+
+# expect
+#    #    init = State.initial
+#    gamma = TypeEnv.empty {}
+#    expr = ELet "id" (EAbs "x" (EVar "x")) (EApp (EApp (EVar "id") (EVar "id")) (EApp (EVar "id") (EVar "id")))
+
+#    res = m gamma expr (TVar "a") (State.initial)
+#    when res is
+#        Ok (subst, _) ->
+#            type = (TVar "a") |> Subst.apply subst
+#            dbg type
+#            type == TFun (TVar "a16") (TVar "a16")
+
+#        Err _ -> Bool.false

@@ -12,38 +12,38 @@ import TypeEnv exposing [TypeEnv]
 w : TypeEnv, Exp, State -> Result (Subst, Type, State) _
 w = \gamma, e, s ->
     when e is
-        ELit _ ->
-            Ok (Subst.empty {}, TInt, s)
+        EConst ->
+            Ok (Subst.empty {}, TConst, s)
 
         EVar x ->
-            scheme = TypeEnv.get? gamma x
+            scheme = try TypeEnv.get gamma x
             (newtype, newState) = Scheme.instantiate scheme s
             Ok (Subst.empty {}, newtype, newState)
 
         EAbs x e1 ->
             (newtype, newstate) = Type.fresh s
             newEnv = gamma |> TypeEnv.add x (Scheme.fromType newtype)
-            (sub1, t1, state1) = w? newEnv e1 newstate
-            fvar = sub1 |> Subst.apply newtype
+            (sub1, t1, state1) = try w newEnv e1 newstate
+            fvar = newtype |> Subst.apply sub1
             Ok (sub1, TFun fvar t1, state1)
 
         EApp e1 e2 ->
-            (sub1, t1, state1) = w? gamma e1 s
-            newEnv = TypeEnv.applySubst sub1 gamma
-            (sub2, t2, state2) = w? newEnv e2 state1
+            (sub1, t1, state1) = try w gamma e1 s
+            newEnv = gamma |> TypeEnv.applySubst sub1
+            (sub2, t2, state2) = try w newEnv e2 state1
             (beta, state3) = Type.fresh state2
-            sub3 = Subst.mgu? (sub2 |> Subst.apply t1) (TFun t2 beta)
+            sub3 = try Subst.mgu (t1 |> Subst.apply sub2) (TFun t2 beta)
             newSub =
                 sub1
                 |> Subst.compose sub2
                 |> Subst.compose sub3
-            Ok (newSub, sub3 |> Subst.apply beta, state3)
+            Ok (newSub, beta |> Subst.apply sub3, state3)
 
         ELet x e1 e2 ->
-            (sub1, t1, state1) = w? gamma e1 s
-            newEnv = sub1 |> TypeEnv.applySubst gamma
-            scheme = newEnv |> TypeEnv.generalize t1
-            (sub2, t2, state2) = w? (newEnv |> TypeEnv.add x scheme) e2 state1
+            (sub1, t1, state1) = try w gamma e1 s
+            newEnv = gamma |> TypeEnv.applySubst sub1
+            scheme = t1 |> TypeEnv.generalize newEnv
+            (sub2, t2, state2) = try w (newEnv |> TypeEnv.add x scheme) e2 state1
 
             Ok (sub1 |> Subst.compose sub2, t2, state2)
 

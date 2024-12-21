@@ -27,7 +27,7 @@ applySubst = \subst, Scheme vars t ->
     newSubstition =
         vars
         |> Set.walk subst Subst.remove
-    Scheme vars (Subst.apply newSubstition t)
+    Scheme vars (t |> Subst.apply newSubstition)
 
 # Instantiating a type scheme replaces all the bound variables with fresh names.
 instantiate : Scheme, State -> (Type, State)
@@ -39,4 +39,4 @@ instantiate = \Scheme vars type, state ->
             substp = subst |> Subst.insert var newType
             (substp, State.update s)
 
-    (Subst.apply newSubst type, newState)
+    (type |> Subst.apply newSubst, newState)

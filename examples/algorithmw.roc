@@ -23,7 +23,7 @@ expr = ELet "id" (EAbs "x" (EVar "x")) (EApp (EApp (EVar "id") (EVar "id")) (EAp
 
 main =
     result =
-        (_, type, _) = w? gamma expr init
+        (_, type, _) = try w gamma expr init
         Ok type
 
     when result is

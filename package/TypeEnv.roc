@@ -32,15 +32,15 @@ freevars = \@TypeEnv env ->
     |> List.walk (Set.empty {}) Set.union
 
 # Applying a substition to a type environment means applying the substitution to the type schemes
-applySubst : Subst, TypeEnv -> TypeEnv
-applySubst = \s, @TypeEnv env ->
+applySubst : TypeEnv, Subst -> TypeEnv
+applySubst = \@TypeEnv env, s ->
     env
     |> Dict.map (\_, scheme -> Scheme.applySubst s scheme)
     |> @TypeEnv
 
 # generalizing a type in a type environment means quantification of type variables free in the type but not in the env
-generalize : TypeEnv, Type -> Scheme
-generalize = \typeEnv, type ->
+generalize : Type, TypeEnv -> Scheme
+generalize = \type, typeEnv ->
     vars =
         Type.freevars type
         |> Set.difference (freevars typeEnv)

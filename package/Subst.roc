@@ -34,18 +34,18 @@ remove = \@Subst dict, var ->
     dict |> Dict.remove var |> @Subst
 
 # apply applies substitution to a type
-apply : Subst, Type -> Type
-apply = \subst, type ->
+apply : Type, Subst -> Type
+apply = \type, subst ->
     when type is
         TVar n -> subst |> get n |> Result.withDefault (TVar n)
-        TInt -> TInt
-        TFun t1 t2 -> TFun (apply subst t1) (apply subst t2)
+        TConst -> TConst
+        TFun t1 t2 -> TFun (t1 |> apply subst) (t2 |> apply subst)
 
 compose : Subst, Subst -> Subst
 compose = \subst2, @Subst sdir1 ->
     (@Subst sdir2) = subst2
     sdir1
-    |> Dict.map \_, type -> apply subst2 type
+    |> Dict.map \_, type -> type |> apply subst2
     |> Dict.insertAll sdir2
     |> @Subst
 
@@ -53,13 +53,13 @@ mgu : Type, Type -> Result Subst _
 mgu = \t1, t2 ->
     when (t1, t2) is
         (TFun l1 r1, TFun l2 r2) ->
-            sub1 = mgu? l1 l2
-            sub2 = mgu? (Subst.apply sub1 r1) (Subst.apply sub1 r2)
+            sub1 = try mgu l1 l2
+            sub2 = try mgu (r1 |> apply sub1) (r2 |> apply sub1)
             Ok (Subst.compose sub1 sub2)
 
         (TVar u, t) -> varBind u t
         (t, TVar u) -> varBind u t
-        (TInt, TInt) -> Ok (Subst.empty {})
+        (TConst, TConst) -> Ok (Subst.empty {})
         _ -> Err TypesDoNotUnify
 
 varBind : Str, Type -> Result Subst _
